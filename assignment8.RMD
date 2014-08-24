@@ -1,0 +1,75 @@
+---
+title: "Coursera Assign 8.RMD"
+output: html_document
+---
+
+
+
+```{r}
+
+###This is the analysis of Coursera Assignment 8 data. Source of this data is http://groupware.les.inf.puc-rio.br/har
+
+library(caret)
+library(randomForest)
+### open the Train and Test data set in excel and remove the emplty/NA columns
+### read the clean training data
+
+trdatacln<-read.csv("pml-training_clean.csv")
+trdatacl <- as.data.frame(lapply(trdatacln[,-55], as.numeric))
+trdatacl[,55]<-trdatacln[,55]
+
+ncol(trdatacl)
+
+testdatacln<-read.csv("pml-testing_clean.csv")
+testdatacl <- as.data.frame(lapply(testdatacln [,-55], as.numeric))
+testdatacl[,55]<-testdatacln[,55]
+
+ncol(testdatacl)
+
+### first we need to identify variables that do not have impact on response
+
+zerovar<- nearZeroVar(trdatacl, saveMetrics = T)
+zerovar$nzv
+
+### it shows that all predcitors are required
+
+
+### we will do PCA and identify key variables
+prepr<-preProcess(trdatacl [,-55], method = "pca", thresh = 0.95)
+trdprepo<-predict(prepr, trdatacl [,-55])
+tedprepo<-predict(prepr, testdatacl[,-55])
+
+### the Result of PCA shows 26 components
+
+### now we will random forest method for multiclassification
+rffit<-randomForest(trdprepo, trdatacl$V55, importance = T, ntrees= 1000)
+
+```
+### Plot the error rate for model
+
+
+```{r, echo=FALSE}
+
+
+plot(rffit)
+
+### Print Confusion matrix
+
+rffit$confusion
+
+### Print Importance Plot
+
+varImpPlot(rffit)
+
+```
+
+```{r}
+
+### Predict the test data set classification
+testpred<-predict(rffit, newdata= tedprepo)
+testpred
+
+
+
+```
+
